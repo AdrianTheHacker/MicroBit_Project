@@ -28,31 +28,69 @@ Wiring Instructions
 
 class Servo():
     def __init__(self):
+        self.control_system = "buttons" # Either controlled by buttons or using accelorometer.
+        
         self.testing_num = 0
-        self.max = 131
-        self.value = int(self.max / 2)
-        self.move_speed = 10
+        self.max_rotation_value = 131
+        self.current_rotation_value = int(self.max_rotation_value / 2)
+        self.rotation_speed = 10
+        
+        self.level()
     
-    def move_clockwise(self):
-        if self.value <= self.max + self.move_speed:
-            self.value += self.move_speed
+    def check_control_system(self):
+        # By connecting a wire from 3v to either pin 2 or pin 1,
+        # we can switch between either button controls or auto.
+        
+        if mb.pin1.read_digital():
+            self.control_system = "buttons"
             
-        mb.pin0.write_analog(self.value)
+        if mb.pin2.read_digital():
+            self.control_system = "Auto"
+            
+    def level(self):
+        self.current_rotation_value = int(self.max_rotation_value / 2)
+        mb.pin0.write_analog(self.current_rotation_value)
+        
+    def move_clockwise(self):
+        if not mb.button_a.is_pressed():
+            return
+            
+        if self.current_rotation_value <= self.max_rotation_value + self.rotation_speed:
+            self.current_rotation_value += self.rotation_speed
+            
+        mb.pin0.write_analog(self.current_rotation_value)
     
     def move_counter_clockwise(self):
-        if self.value >= 0 + self.move_speed:
-            self.value -= self.move_speed
+        if not mb.button_b.is_pressed():
+            return
+        
+        if self.current_rotation_value >= 0 + self.rotation_speed:
+            self.current_rotation_value -= self.rotation_speed
             
-        mb.pin0.write_analog(self.value)
+        mb.pin0.write_analog(self.current_rotation_value)
     
+    def balance(self):
+        # Repeats the actions you do
+        if mb.accelerometer.is_gesture("face up"):
+            self.level()
+            
+        elif mb.accelerometer.is_gesture("right"):
+            mb.pin0.write_analog(self.max_rotation_value - self.rotation_speed)
+            
+        elif mb.accelerometer.is_gesture("left"):
+            mb.pin0.write_analog(5)
+    
+        print(mb.accelerometer.current_gesture())
+        
     def check_input(self):
-        if mb.button_a.is_pressed():
-            self.testing_num += 1
+        self.check_control_system()
+        
+        if self.control_system == "buttons":
+            self.move_clockwise()
             self.move_counter_clockwise()
             
-        if mb.button_b.is_pressed():
-            self.testing_num += 1
-            self.move_clockwise()
+        if self.control_system == "Auto":
+            self.balance()
             
 
 servo = Servo()
