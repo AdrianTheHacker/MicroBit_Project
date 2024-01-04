@@ -1,2 +1,2 @@
-# MicroBit_Project
-I'm just gonna add a bunch of shit to this and make a DaNdY microbit program.
+# Microbit Servo Controller
+This project uses a Microbit and MicroPython to control a servo motor.
